@@ -1,5 +1,7 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
+import LoginGate from './components/LoginGate';
+import Dashboard from './components/Dashboard';
 import CreateMoment from './components/moments/CreateMoment';
 import ViewAllMoments from './components/moments/ViewAllMoments';
 import CreateEvent from './components/events/CreateEvent';
@@ -10,7 +12,7 @@ import EditMenu from './components/EditMenu';
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Layout />}>
+      <Route path="/" element={<LoginGate><Layout /></LoginGate>}>
         {/* Nested routes use the Layout */}
         <Route path="moments/create" element={<CreateMoment />} />
         <Route path="moments/view" element={<ViewAllMoments />} />
@@ -19,6 +21,7 @@ export default function App() {
         <Route path="about/edit" element={<EditAbout />} />
         <Route path="menu/edit" element={<EditMenu />} />
         <Route path="*" element={<div className="text-center">Select an action from above.</div>} />
+        <Route path="/login" element={<LoginGate />} />
       </Route>
     </Routes>
   );

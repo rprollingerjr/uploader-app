@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const STORAGE_KEY = 'whitepie_upload_access';
 const ONE_MONTH_MS = 1000 * 60 * 60 * 24 * 30;
@@ -6,30 +8,40 @@ const ONE_MONTH_MS = 1000 * 60 * 60 * 24 * 30;
 export default function LoginGate({ children }) {
   const [entered, setEntered] = useState(false);
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (saved && saved.password === import.meta.env.VITE_UPLOAD_PASSWORD) {
-      const now = Date.now();
-      if (now - saved.timestamp < ONE_MONTH_MS) {
-        setEntered(true);
-      } else {
-        localStorage.removeItem(STORAGE_KEY);
-      }
+    const now = Date.now();
+
+    if (saved && saved.timestamp && now - saved.timestamp < ONE_MONTH_MS) {
+      setEntered(true);
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
     }
   }, []);
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (password === import.meta.env.VITE_UPLOAD_PASSWORD) {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ password, timestamp: Date.now() })
-      );
-      setEntered(true);
-    } else {
-      setError('Incorrect password.');
+  const handleLogin = async (e) => {
+    e.preventDefault(); // ❗ Prevent page reload
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE}/api/auth`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+
+      if (response.ok) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          timestamp: Date.now()
+        }));
+        setEntered(true);
+      } else {
+        const result = await response.json();
+        toast.error(result.message || "Invalid password");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Server error.");
     }
   };
 
@@ -48,7 +60,6 @@ export default function LoginGate({ children }) {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        {error && <div className="alert alert-danger">{error}</div>}
         <button className="btn btn-dark w-100" type="submit">Unlock</button>
       </form>
     </div>
